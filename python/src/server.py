@@ -1,0 +1,52 @@
+from src.networker import NetworkerBase
+
+from typing import final, List
+
+@final
+class Server:
+    received_messages:List[str]
+    
+    def __init__(self, networker:NetworkerBase, ip:str="localhost", port:int=4000):
+        self.networker = networker
+        self.port = port
+        self.ip=ip
+        self.received_messages = []
+        
+    def handle_message(self, message:str):
+        self.received_messages.append(message)
+        print(message)
+        
+    def start(self):
+        # Block thread and wait for client to connect
+        self.networker.server_host(self.ip, self.port)
+        
+        # Client connected, do server stuff
+        self.networker.register_message_handler(self.handle_message)
+        
+    def send_command(self,command:str):
+        if command[-1] != '\n':
+            command += "\n"
+            
+        if command.strip() == "leave":
+            print ("bye")
+            return False
+        self.networker.send_message(command)
+        return True
+        
+            
+    def cli(self):
+        print ("Client connected! Enter commands to execute...")
+        while 1:
+            command = input("> ")
+            
+            if not self.send_command(command):
+                break
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.networker.close()
+
+if __name__ == "__main__":
+    pass

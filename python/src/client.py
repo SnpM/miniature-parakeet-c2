@@ -20,3 +20,18 @@ class Client:
 
     def __exit__(self, type, value, traceback):
         self.networker.close()
+        
+
+from src.networker import Networker
+from src import config
+
+if __name__ == "__main__":
+
+    client = Client(
+        Networker(),
+        server_ip=config.SERVER_IP,
+        server_port=config.SERVER_PORT
+    )
+    with client:
+        client.start()
+        

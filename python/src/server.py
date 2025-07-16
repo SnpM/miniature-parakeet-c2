@@ -48,5 +48,15 @@ class Server:
     def __exit__(self, type, value, traceback):
         self.networker.close()
 
+from src.networker import Networker
+from src import config
+
 if __name__ == "__main__":
-    pass
+
+    server = Server(
+        Networker(),
+        ip=config.SERVER_HOST_IP,
+        port=config.SERVER_PORT
+    )
+    with server:
+        server.start()

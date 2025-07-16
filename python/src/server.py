@@ -1,6 +1,8 @@
 from src.networker import NetworkerBase
 
 from typing import final, List
+import time
+import datetime
 
 @final
 class Server:
@@ -39,8 +41,20 @@ class Server:
         while 1:
             command = input("> ")
             
+            received_count = len(self.received_messages)
+            send_time = time.time()
+
             if not self.send_command(command):
                 break
+            
+            # Get response from client before sending another message
+            WAIT_TIME = 5
+            while(1):
+                if len(self.received_messages) > received_count:
+                    break
+                if time.time() - send_time > WAIT_TIME:
+                    print("Error: Last command timed out")
+                    break
 
     def __enter__(self):
         return self
@@ -52,7 +66,6 @@ from src.networker import Networker
 from src import config
 
 if __name__ == "__main__":
-    print("entereeed")
     server = Server(
         Networker(),
         ip=config.SERVER_HOST_IP,
@@ -60,4 +73,6 @@ if __name__ == "__main__":
     )
     with server:
         server.start()
+        print("Server started!")
+
         server.cli()

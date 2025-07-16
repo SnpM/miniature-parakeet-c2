@@ -52,6 +52,7 @@ class Networker(NetworkerBase):
         self.__running = True
         
     def socket_tick(self, conn:socket.socket):
+        DELIMITER = "<<hi i am an delimiter. we can put tags and stuff here. >>"
         fcntl.fcntl(conn, fcntl.F_SETFL, os.O_NONBLOCK)
 
         while True:          
@@ -76,21 +77,27 @@ class Networker(NetworkerBase):
 
                 # find new line indicating full command
                 def process_next_message():
-                    for i in range(len(self.receive_queue)):
-                        char = self.receive_queue[i]
-                        if char == "\n":
-                            
-                            message = ''.join(self.receive_queue[0:i])
-                            self.receive_message(message)
-                            if len(self.receive_queue) > i:
-                                self.receive_queue = self.receive_queue[i+1::]
-                            process_next_message()
+                    receive_queue_str = ''.join(self.receive_queue)
+                    
+                    delim_position = receive_queue_str.index(DELIMITER)
+                    delim_end = delim_position + len(DELIMITER)
+                    
+                    message = receive_queue_str[0:delim_position]
+                    print(message)
+                    self.receive_message(''.join(message))
+                    self.receive_queue = self.receive_queue[delim_end+1::]
+                    if len(self.receive_queue) > 0:
+                        process_next_message()
+                        
                 process_next_message()
 
             if len(self.send_queue) > 0:
+                
                 for message in self.send_queue:
+                    message = message + DELIMITER
                     encoded = message.encode()
                     conn.sendall(encoded)
+                    print("sent")
                     
                 self.send_queue = []
             sleep(.05)

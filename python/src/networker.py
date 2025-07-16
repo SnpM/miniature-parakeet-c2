@@ -83,7 +83,6 @@ class Networker(NetworkerBase):
                     delim_end = delim_position + len(DELIMITER)
                     
                     message = receive_queue_str[0:delim_position]
-                    print(message)
                     self.receive_message(''.join(message))
                     self.receive_queue = self.receive_queue[delim_end+1::]
                     if len(self.receive_queue) > 0:
@@ -97,7 +96,6 @@ class Networker(NetworkerBase):
                     message = message + DELIMITER
                     encoded = message.encode()
                     conn.sendall(encoded)
-                    print("sent")
                     
                 self.send_queue = []
             sleep(.05)

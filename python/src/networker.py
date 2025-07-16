@@ -59,8 +59,6 @@ class Networker(NetworkerBase):
                 break  
             try:
                 data = conn.recv(1024)
-                if self.mode =="server":
-                    print("fdsafdsa'")
             except socket.error as e: # type: ignore
                 err = e.args[0]
                 import errno
@@ -75,29 +73,24 @@ class Networker(NetworkerBase):
                 for byte in data:
                     self.receive_queue.append(chr(byte))
                     
-                if self.mode == "server":
-                    print("asdf")
+
                 # find new line indicating full command
                 def process_next_message():
                     for i in range(len(self.receive_queue)):
                         char = self.receive_queue[i]
                         if char == "\n":
                             
-                            message = ''.join(self.receive_queue[0:i+1])
+                            message = ''.join(self.receive_queue[0:i])
                             self.receive_message(message)
-                            self.receive_queue = self.receive_queue[i+1::]
+                            if len(self.receive_queue) > i:
+                                self.receive_queue = self.receive_queue[i+1::]
                             process_next_message()
                 process_next_message()
-            
-                if not data:
-                    print ("DONEEEE",self.mode)
-                    break
+
             if len(self.send_queue) > 0:
                 for message in self.send_queue:
                     encoded = message.encode()
                     conn.sendall(encoded)
-                    if self.mode == "client":
-                        print("client->server", encoded)
                     
                 self.send_queue = []
             sleep(.05)

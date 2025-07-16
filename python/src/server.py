@@ -52,7 +52,7 @@ from src.networker import Networker
 from src import config
 
 if __name__ == "__main__":
-
+    print("entereeed")
     server = Server(
         Networker(),
         ip=config.SERVER_HOST_IP,
@@ -60,3 +60,4 @@ if __name__ == "__main__":
     )
     with server:
         server.start()
+        server.cli()

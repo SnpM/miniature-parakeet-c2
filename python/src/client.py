@@ -34,4 +34,5 @@ if __name__ == "__main__":
     )
     with client:
         client.start()
-        
+        while(1):
+            pass

@@ -3,10 +3,11 @@
 #include "stdio.h"
 #include "../include/executor.h"
 
-void main(int argc, char** argv) {
-  test_executor()
-}
-
 void test_executor() {
 
 }
+
+void main(int argc, char** argv) {
+  test_executor();
+}
+

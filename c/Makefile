@@ -1,38 +1,56 @@
-IDIR =./include
-CC=gcc
-CFLAGS=-I$(IDIR)
-
 SRCDIR=./src
-ODIR=./obj
-LDIR=./lib
+LIBDIR=$(SRCDIR)/lib
+APPDIR=$(SRCDIR)/app
+INCDIR=./include
+OBJDIR=./obj
 OUTDIR=./bin
+TESTDIR=./tests
 
-LIBS=-lm
+CC=gcc
+CFLAGS=-I$(INCDIR)
 
-_DEPS = client.h  executor.h  main_client.h  main_server.h  networker.h  server.h
-DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+# core library files
+LIB_SOURCES := $(wildcard $(LIBDIR)/*.c)
+LIB_OBJ := $(patsubst $(LIBDIR)/%.c, $(OBJDIR)/lib/%.o, $(LIB_SOURCES))
 
-_LIB_OBJ = client.o  executor.o  networker.o  server.o
+# entry point files
+MAIN_SOURCES := $(wildcard $(APPDIR)/*.c)
+MAIN_OBJ := $(patsubst $(APPDIR)/%.c,$(OBJDIR)/app/%.o,$(MAIN_SOURCES))
 
-_CLIENT_OBJ = main_client.o $(_LIB_OBJ)
-CLIENT_OBJ = $(patsubst %,$(ODIR)/%,$(_CLIENT_OBJ))
+# test files
+TEST_SOURCES := $(wildcard $(TESTDIR)/*.c)
 
-_SERVER_OBJ = main_server.o $(_LIB_OBJ)
-SERVER_OBJ = $(patsubst %,$(ODIR)/%,$(_SERVER_OBJ))
-
-
-$(ODIR)/%.o: $(SRCDIR)/%.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
-
+# === targets ===
 default: client server
 
-client: $(CLIENT_OBJ)
-	$(CC) -o $(OUTDIR)/$@ $^ $(CFLAGS) $(LIBS)
+client: $(OUTDIR)/client
+	
+server: $(OUTDIR)/server
 
-server: $(SERVER_OBJ)
+#=== binary linking ===
+# Build % with %.o and library objs
+$(OUTDIR)/%: $(OBJDIR)/app/%.o $(LIB_OBJ)
+	$(CC) -o $@ -c $^ $(CFLAGS)
+
+#=== compilation ===
+
+# Build entry point(s)
+$(OBJDIR)/app/%.o: $(APPDIR)/%.c
+	$(CC) -o $@ -c $^ $(CFLAGS)
+
+# Build library objects
+$(OBJDIR)/lib/%.o: $(LIBDIR)/%.c
+	$(CC) -c $< -o $@ $(CFLAGS)
+	
+
+debug:
+	: $(MAIN_OBJ)
+
+
+test: $(TEST_OBJ) 
 	$(CC) -o $(OUTDIR)/$@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: clean
 
 clean:
-	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ $(OUTDIR)/*
+	rm -f $(OBJDIR)/*.o *~ core $(INCDIR)/*~ $(OUTDIR)/*

@@ -261,6 +261,6 @@ __marimo__/
 **.pyc
 python/src/__pycache__/__init__.cpython-312.pyc
 
-c/bin/**
+c/bin
 
-c/obj/**
+c/obj

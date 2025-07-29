@@ -257,10 +257,3 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
-
-**.pyc
-python/src/__pycache__/__init__.cpython-312.pyc
-
-c/bin
-
-c/obj

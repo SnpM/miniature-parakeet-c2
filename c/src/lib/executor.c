@@ -15,7 +15,7 @@ char* execute(char command[]) {
     FILE *fp;
     fp = popen(command, "r");
     if (fp == NULL){
-        printf("no bueno");
+        perror("failed to run command");
         strncpy(result,"failed to run command", RESULT_SIZE-1);
         return result;
     }

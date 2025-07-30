@@ -1,10 +1,13 @@
 #define MUNIT_ENABLE_ASSERT_ALIASES
-#include "../munit/munit.h"
+#include "munit.h"
 #include "stdio.h"
 #include "../include/executor.h"
 
 //defined in test_executor.c
 extern MunitTest executor_tests[];
+
+//test_networker.c
+extern MunitTest networker_tests[];
 
 
 static MunitSuite suites[] = {
@@ -17,6 +20,7 @@ static MunitSuite suites[] = {
     1, /* iterations */
     MUNIT_SUITE_OPTION_NONE /* options */
   },
+  {"/networker", networker_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE},
 
   //EOF array
   {NULL, NULL, NULL, 0, MUNIT_SUITE_OPTION_NONE}

@@ -22,6 +22,8 @@ static MunitResult test_execute(){
     //asserts
     munit_assert_not_null(result);
     munit_assert_string_equal(result, crib);
+
+    free(result);
 }
 
 

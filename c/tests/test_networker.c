@@ -9,6 +9,8 @@ const int TEST_PORT = 4444;
 
 static MunitResult test_client2server() {
 
+    char crib[] = "teongdlalseoint";
+
     //use fork to connect to our server
     int fork_id = fork();
     
@@ -19,11 +21,18 @@ static MunitResult test_client2server() {
     else if (fork_id == 0)
     {
         //forked
-        networker_connect(TEST_IP,TEST_PORT);
-        exit(EXIT_FAILURE);
+        NetworkClient nclient = networker_connect(TEST_IP,TEST_PORT);
+        send_message(nclient.client_fd, crib);
     }
     else {
-        networker_host(TEST_IP, TEST_PORT);
+        NetworkServer nserver = networker_host(TEST_IP, TEST_PORT);
+        char recv_buffer[0x1000];
+        while(1){
+            int numbytes = network_poll(nserver.connection_fd, recv_buffer, 0x1000);
+            printf("%s",recv_buffer);
+
+        }
+        munit_assert_string_equal(crib,recv_buffer);
     }
 
 }

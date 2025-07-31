@@ -7,6 +7,8 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <sys/select.h>
+#include <fcntl.h>
+#include <poll.h>
 // https://www.geeksforgeeks.org/c/socket-programming-cc/#
 
 NetworkServer networker_host(const char ip[], int port)
@@ -43,39 +45,76 @@ NetworkServer networker_host(const char ip[], int port)
         exit(EXIT_FAILURE);
     }
 
-    int client_fd = accept(server_fd, (struct sockaddr *)&address, &addrlen);
-    if (client_fd < 0)
+    int connection_fd = accept(server_fd, (struct sockaddr *)&address, &addrlen);
+    if (connection_fd < 0)
     {
         perror("connect bad");
         exit(EXIT_FAILURE);
     }
 
+
+
     printf("server: client connected\n");
 
-    // Use select() for 2-way communication
-    // https://www.cs.cmu.edu/afs/cs/academic/class/15213-f99/www/class26/selectserver.c?utm_source=chatgpt.com
-    int not_done = 1;
-    fd_set readfds;
-    while (not_done)
-    {
-        // reset flag
-        FD_ZERO(&readfds);
-        // attach to socket's fd
-        FD_SET(client_fd, &readfds);
-        // attach to stdin
-        FD_SET(STDIN_FILENO, &readfds);
+    NetworkServer network_server;
+    network_server.server_fd = server_fd;
+    network_server.connection_fd = connection_fd;
+    return network_server;
+}
 
-        // check for error in select
-        if (
-            select(
-                client_fd + 1, // covers stdin too
-                &readfds,
-                0, 0, 0) < 0)
-        {
-            perror("ERROR: failed to select");
-            exit(EXIT_FAILURE);
-        }
+//stateless function to poll socket for received message
+//Returns number of bytes received or 0 for no data received
+int network_poll(int socket_fd, char* message_out, int max_chars){
+    // We're gonna use a non-blocking poll instead of blocking select() strategy
+    // https://linux.die.net/man/2/fcntl
+    fcntl(socket_fd, F_SETLK, O_NONBLOCK);
+
+    // https://www.reddit.com/r/C_Programming/comments/eeqi8r/understanding_how_to_use_poll_in_socket/
+    struct pollfd poll_fd;
+    poll_fd.events = POLLIN;
+    poll_fd.fd = socket_fd;
+
+    //poll 1 socket and immediately return
+    int poll_result = poll(&poll_fd, 1, 0);
+    if (poll_result < 0) {
+        perror("ERROR: poll bad");
+        exit(EXIT_FAILURE);
     }
+
+    if (poll_result == 0) {
+        //no data, just return 0
+        return 0;
+    }
+    
+    //data received
+    //ensure we get POLLIN event
+    if (!(poll_fd.revents & POLLIN)) {
+        perror("ERROR: unexpected poll event");
+    }
+
+    char buffer[0x1000];
+
+    //parse the message
+    ssize_t numbytes = recv(socket_fd, buffer, sizeof(buffer), 0);
+    if (numbytes < 0) {
+        perror("ERROR: failed recv");
+        exit(EXIT_FAILURE);
+    }
+    if (numbytes > 0) {
+        printf("Received %li bytes!", (long)numbytes);
+
+        strncpy(message_out, buffer, max_chars+1);
+        if (strlen(buffer) > max_chars) {
+            printf("Warning: received %li bytes greater than %d max_chars", numbytes, max_chars);
+        }
+        return numbytes;
+    }
+    else {
+        perror("pika????");
+        exit(EXIT_FAILURE);
+    }
+
+
 }
 
 NetworkClient networker_connect(const char ip[], int port)
@@ -103,14 +142,13 @@ NetworkClient networker_connect(const char ip[], int port)
         exit(EXIT_FAILURE);
     }
     printf("Client: connected");
+
+    NetworkClient network_client;
+    network_client.client_fd = client_fd;
+    return network_client;
 }
 
-int send_client2server(const char message[])
+int send_message(int socket_fd, char* message)
 {
-    return 0;
-}
-
-int send_server2client(const char message[])
-{
-    return 0;
+    send(socket_fd, &message, sizeof(message), 0);
 }

@@ -6,7 +6,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <arpa/inet.h>
-
+#include <sys/select.h>
 // https://www.geeksforgeeks.org/c/socket-programming-cc/#
 
 NetworkServer networker_host(const char ip[], int port)
@@ -24,35 +24,62 @@ NetworkServer networker_host(const char ip[], int port)
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = inet_addr(ip);
     address.sin_port = htons(port);
-    socklen_t addrlen = sizeof(address); //why tf does accept() require a reference?!?!?
+    socklen_t addrlen = sizeof(address); // why tf does accept() require a reference?!?!?
 
-
-    //bind server
-    int bind_result = bind(server_fd, (struct sockaddr *) &address, sizeof(address));
+    // bind server
+    int bind_result = bind(server_fd, (struct sockaddr *)&address, sizeof(address));
     if (bind_result < 0)
     {
         perror("bind bad");
         exit(EXIT_FAILURE);
     }
 
-    //listen
+    // listen
     printf("Listening on %s:%d\n", ip, port);
     int listen_status = listen(server_fd, 3);
-    if (listen_status < 0) {
+    if (listen_status < 0)
+    {
         perror("listen bad");
         exit(EXIT_FAILURE);
     }
 
-    int client_fd = accept(server_fd, (struct sockaddr *) &address, &addrlen);
-    if (client_fd < 0)  {
+    int client_fd = accept(server_fd, (struct sockaddr *)&address, &addrlen);
+    if (client_fd < 0)
+    {
         perror("connect bad");
         exit(EXIT_FAILURE);
     }
 
     printf("server: client connected\n");
+
+    // Use select() for 2-way communication
+    // https://www.cs.cmu.edu/afs/cs/academic/class/15213-f99/www/class26/selectserver.c?utm_source=chatgpt.com
+    int not_done = 1;
+    fd_set readfds;
+    while (not_done)
+    {
+        // reset flag
+        FD_ZERO(&readfds);
+        // attach to socket's fd
+        FD_SET(client_fd, &readfds);
+        // attach to stdin
+        FD_SET(STDIN_FILENO, &readfds);
+
+        // check for error in select
+        if (
+            select(
+                client_fd + 1, // covers stdin too
+                &readfds,
+                0, 0, 0) < 0)
+        {
+            perror("ERROR: failed to select");
+            exit(EXIT_FAILURE);
+        }
+    }
 }
 
-NetworkClient networker_connect(const char ip[], int port) {
+NetworkClient networker_connect(const char ip[], int port)
+{
     // make socket
     int client_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (client_fd < 0)
@@ -61,27 +88,29 @@ NetworkClient networker_connect(const char ip[], int port) {
         exit(EXIT_FAILURE);
     }
 
-    //build address
-    struct sockaddr_in serv_address; 
+    // build address
+    struct sockaddr_in serv_address;
     serv_address.sin_addr.s_addr = inet_addr(ip);
     serv_address.sin_family = AF_INET;
     serv_address.sin_port = htons(port);
 
     printf("Connecting to %s:%d\n", ip, port);
 
-    int connect_status = connect(client_fd, (struct sockaddr *) &serv_address, sizeof(serv_address));
-    if (connect_status < 0){
+    int connect_status = connect(client_fd, (struct sockaddr *)&serv_address, sizeof(serv_address));
+    if (connect_status < 0)
+    {
         perror("connect bad");
         exit(EXIT_FAILURE);
     }
     printf("Client: connected");
-
 }
 
-int send_client2server(const char message[]) {
-return 0;
+int send_client2server(const char message[])
+{
+    return 0;
 }
 
-int send_server2client(const char message[]){
-return 0;
+int send_server2client(const char message[])
+{
+    return 0;
 }
